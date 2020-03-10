@@ -1,75 +1,107 @@
-//Write your code here
 #include<iostream>
 #include<string>
-#include<cstring>
 #include<fstream>
 #include<vector>
-#include<cctype>
+#include<cstdlib>
+#include<iomanip>
+
 using namespace std;
 
-string upper(string s){
-    for(int i=0;i<s.size();i++){
-           s[i] =  toupper(s[i]) ;
-        }
-        return s;
+struct student{
+	string name;
+	int id;
+	char gender;
+	float gpa;
+};
+struct course{
+	string name;
+	int id;
+	vector<string> lecture_list;
+	vector<student *> student_list;
+};
+
+student * findstudent(vector<student> &allstudents,int key){ //Correct this line
+	for(unsigned int i = 0; i < allstudents.size(); i++){
+		if(allstudents[i].id  == key) return &allstudents[i];
+	}
 }
 
+void printreport(vector<course> allcourses){
+	for(unsigned int i = 0;i < allcourses.size(); i++){
+		cout << "-----------------------------------------------------------------------------\n";
+		cout << "Course:\t\t" << allcourses[i].name << " ("<< allcourses[i].id << ")\n\n";
+		cout << "Lecturers:\t";
+		for(unsigned int j = 0; j < allcourses[i].lecture_list.size();j++){
+			if(j != 0) cout << ", ";
+			cout << allcourses[i].lecture_list[j];
+		} 
+		cout << "\n\nStudents:\t";
+		for(unsigned int j = 0; j < allcourses[i].student_list.size();j++){
+			if(j != 0) cout << "\t\t";
+			cout << setw(15) << left << allcourses[i].student_list[j]->name << "\t";
+			cout << allcourses[i].student_list[j]->id << "\t";
+			cout << allcourses[i].student_list[j]->gender << "\t";
+			cout << allcourses[i].student_list[j]->gpa << "\n";
+		} 
+		
+	}
+	cout << "-----------------------------------------------------------------------------\n";
+}
 
 int main(){
-    ifstream source;
-    source.open("name_score.txt");
-    string textline;
-    vector<string> v_name,v_grade;
-    char name[100];
-    int a,b,c;
-    
-    while( getline(source,textline)){ //read each line of file
-    	
-    	sscanf(textline.c_str(),"%[^:]: %d %d %d",name,&a,&b,&c);
-        v_name.push_back(name);
-        int total = a+b+c;
-        v_grade.push_back(total >= 80 ? "A" : total>=70 ? "B" : total >= 60 ? "C" : total >= 50 ? "D" : "F");
-        cout<<name<<" "<<a<<" "<<b<<" "<<c<<" = "<<total<<endl;
+	ifstream student_file("students.txt");
+	ifstream course_file("courses.txt");
+	vector<student> allstudents;
+	vector<course> allcourses;
+	
+	string textline;
+	
+	while(getline(student_file,textline)){
+		student s; 
+		//Assign value to the members of struct s;
+		char name1[100];
+		int id1;
+		char gender1;
+		float gpa1;
+		//Assign value to the members of struct s;
+		sscanf(textline.c_str(),"%[^,],%d,%c,%f",name1,&id1,&gender1,&gpa1);
+		s.name = name1;
+		s.id = id1;
+		s.gender = gender1;
+		s.gpa = gpa1; 
+	
+		allstudents.push_back(s);		
+	
 	}
-    string type,search;
-  	while(1) {
-          
-  		cout<<"Please input your command : ";
-        getline(cin,textline);
-        int idx= textline.find_first_of(" ");
-        int i=0;
-       
-      
-        string s1=upper(textline.substr(0,idx));
-        string s2=upper(textline.substr(idx+1,textline.size()));
-        
-        //string s2 = upper(textline,substr(..........)); //option ; a,b,c,...,sanji,...
-        // if(s1=="NAME") {
-            
-        // }
-        if (s1 == "GRADE") {
-            for(int i=0;i<v_name.size();i++) {
-                if (s2==v_grade[i]) cout << v_name[i]<<endl;
-            }
-            cout<<"-----------------------------------"<<endl;
-        }
-        else if (s1=="NAME") {
-            for(int i=0;i<v_name.size();i++){
-                string ss = v_name[i].substr(0,v_name[i].size());
-                if (s2==upper(v_name[i]))  {
-                    cout <<v_name[i]<<"'s grade = "<<v_grade[i]<<endl; 
-                    break;
-                    }
-                else if (s2!=upper(v_name[i]) && i != v_name.size()-1);
-                else cout<<"Cannot found."<<endl;
-            }
-            cout<<"-----------------------------------"<<endl;
-        }
-        else if (s1 == "EXIT") break;
-        else cout<<"Invalind command."<<endl<<"-----------------------------------"<<endl;
-   
-  		
-  		//type exit ; break
-      
-}
+	int state = 1;
+	while(getline(course_file,textline)){
+		if(state == 1){
+			course c;
+			int loc = textline.find_first_of('(');
+			c.name = textline.substr(0,loc-1);
+			c.id = atof(textline.substr(loc+1,5).c_str());
+			getline(course_file,textline);
+			allcourses.push_back(c);
+			state = 2;			
+		}else if(state == 2){
+			if(textline == "> Students"){
+				state = 3;
+
+			}else{
+				allcourses[allcourses.size()-1].lecture_list.push_back(textline);
+				//Append student_list;
+			}			
+		}else{
+			if(textline == "---------------------------------------"){
+				state = 1;
+			}else{
+				student *p = findstudent(allstudents,atof(textline.c_str()));
+				allcourses[allcourses.size()-1].student_list.push_back(p);
+				//Append student_list;
+			}
+		}
+	}
+	printreport(allcourses);
+
+
 }
